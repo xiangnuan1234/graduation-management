@@ -122,6 +122,7 @@ onMounted(async () => {
 })
 
 function initProgressChart(data) {
+  if (!progressChart.value) return
   const chart = echarts.init(progressChart.value)
   const option = {
     tooltip: { trigger: 'item' },
@@ -139,6 +140,7 @@ function initProgressChart(data) {
 }
 
 function initTeacherChart(data) {
+  if (!teacherChart.value) return
   const chart = echarts.init(teacherChart.value)
   const option = {
     tooltip: { trigger: 'axis' },
@@ -150,6 +152,7 @@ function initTeacherChart(data) {
 }
 
 function initScoreChart(data) {
+  if (!scoreChart.value) return
   const chart = echarts.init(scoreChart.value)
   const scores = data.proposalScores || []
   const option = {
