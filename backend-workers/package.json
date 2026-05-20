@@ -1,0 +1,20 @@
+{
+  "name": "graduation-management-workers",
+  "version": "1.0.0",
+  "description": "毕业设计管理系统 - Cloudflare Workers 后端",
+  "main": "src/index.js",
+  "type": "module",
+  "scripts": {
+    "dev": "wrangler dev",
+    "deploy": "wrangler deploy",
+    "db:create": "wrangler d1 create graduation-db",
+    "db:migrate": "wrangler d1 execute graduation-db --file=./migrations/schema.sql",
+    "r2:create": "wrangler r2 bucket create graduation-files"
+  },
+  "dependencies": {
+    "jose": "^5.2.0"
+  },
+  "devDependencies": {
+    "wrangler": "^3.28.0"
+  }
+}

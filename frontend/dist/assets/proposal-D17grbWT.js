@@ -1,0 +1,1 @@
+import{M as o}from"./index-BQ7_iugC.js";function s(r){return o({url:"/proposals",method:"GET",params:r})}function a(r){return o({url:"/proposals",method:"POST",data:r,headers:{"Content-Type":"multipart/form-data"}})}function p(r,t){return o({url:`/proposals/${r}/review`,method:"PUT",data:t})}export{s as g,p as r,a as s};

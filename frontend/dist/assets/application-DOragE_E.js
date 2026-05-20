@@ -1,0 +1,1 @@
+import{M as a}from"./index-BQ7_iugC.js";function o(t){return a({url:"/applications",method:"GET",params:t})}function r(t){return a({url:"/applications",method:"POST",data:{topic_ids:t}})}function n(t,p){return a({url:`/applications/${t}/approve`,method:"PUT",data:{status:p}})}export{r as a,n as b,o as g};

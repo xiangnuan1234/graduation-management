@@ -1,0 +1,62 @@
+import { successResponse, errorResponse } from '../utils.js';
+
+export async function handleNotifications(request, env, user) {
+  const url = new URL(request.url);
+  const pathname = url.pathname;
+
+  // GET /api/notifications - 获取通知列表
+  if (pathname === '/api/notifications' && request.method === 'GET') {
+    if (!user) {
+      return errorResponse('未登录', 401);
+    }
+
+    try {
+      const { results } = await env.DB.prepare(
+        'SELECT * FROM notification WHERE user_id = ? ORDER BY created_at DESC'
+      ).bind(user.id).all();
+      
+      return successResponse(results);
+    } catch (error) {
+      return errorResponse(error.message, 500);
+    }
+  }
+
+  // POST /api/notifications - 创建通知（管理员或教师）
+  if (pathname === '/api/notifications' && request.method === 'POST') {
+    if (!user || !['admin', 'teacher'].includes(user.role)) {
+      return errorResponse('权限不足', 403);
+    }
+
+    try {
+      const { user_id, title, content } = await request.json();
+      await env.DB.prepare(
+        'INSERT INTO notification (user_id, title, content) VALUES (?, ?, ?)'
+      ).bind(user_id, title, content).run();
+
+      return successResponse(null, '通知发送成功');
+    } catch (error) {
+      return errorResponse(error.message, 500);
+    }
+  }
+
+  // PUT /api/notifications/:id/read - 标记为已读
+  const notifIdMatch = pathname.match(/^\/api\/notifications\/(\d+)\/read$/);
+  if (notifIdMatch && request.method === 'PUT') {
+    if (!user) {
+      return errorResponse('未登录', 401);
+    }
+
+    try {
+      const notifId = notifIdMatch[1];
+      await env.DB.prepare(
+        'UPDATE notification SET is_read = TRUE WHERE id = ? AND user_id = ?'
+      ).bind(notifId, user.id).run();
+
+      return successResponse(null, '已标记为已读');
+    } catch (error) {
+      return errorResponse(error.message, 500);
+    }
+  }
+
+  return null;
+}

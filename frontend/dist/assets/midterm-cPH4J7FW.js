@@ -1,0 +1,1 @@
+import{M as t}from"./index-BQ7_iugC.js";function i(r){return t({url:"/midterms",method:"GET",params:r})}function s(r){return t({url:"/midterms",method:"POST",data:r})}function u(r,e){return t({url:`/midterms/${r}/review`,method:"PUT",data:e})}export{i as g,u as r,s};

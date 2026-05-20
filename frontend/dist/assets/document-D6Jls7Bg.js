@@ -1,0 +1,1 @@
+import{M as u}from"./index-BQ7_iugC.js";function a(t){return u({url:"/documents",method:"GET",params:t})}function n(t){return u({url:"/documents",method:"POST",data:t,headers:{"Content-Type":"multipart/form-data"}})}function r(t,e){return u({url:`/documents/${t}/status`,method:"PUT",data:{status:e}})}export{r as a,a as g,n as u};
