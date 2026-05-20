@@ -96,27 +96,27 @@ const scoreChart = ref(null)
 
 onMounted(async () => {
   const res1 = await getOverview()
-  if (res1.code === 200) {
+  if (res1.code === 200 && res1.data) {
     overview.value = res1.data
   }
 
   const res2 = await getTopicPopularity()
-  if (res2.code === 200) {
+  if (res2.code === 200 && res2.data) {
     popularTopics.value = res2.data
   }
 
   const res3 = await getStagesProgress()
-  if (res3.code === 200) {
+  if (res3.code === 200 && res3.data) {
     initProgressChart(res3.data)
   }
 
   const res4 = await getTeachersStats()
-  if (res4.code === 200) {
+  if (res4.code === 200 && res4.data) {
     initTeacherChart(res4.data)
   }
 
   const res5 = await getScores()
-  if (res5.code === 200) {
+  if (res5.code === 200 && res5.data) {
     initScoreChart(res5.data)
   }
 })
@@ -129,9 +129,9 @@ function initProgressChart(data) {
       type: 'pie',
       radius: ['40%', '70%'],
       data: [
-        { name: '开题报告', value: data.proposal.submitted },
-        { name: '中期检查', value: data.midterm.submitted },
-        { name: '论文提交', value: data.document.submitted }
+        { name: '开题报告', value: data.proposal?.submitted || 0 },
+        { name: '中期检查', value: data.midterm?.submitted || 0 },
+        { name: '论文提交', value: data.document?.submitted || 0 }
       ]
     }]
   }
@@ -142,15 +142,16 @@ function initTeacherChart(data) {
   const chart = echarts.init(teacherChart.value)
   const option = {
     tooltip: { trigger: 'axis' },
-    xAxis: { type: 'category', data: data.map(d => d.real_name) },
+    xAxis: { type: 'category', data: data.map(d => d.real_name || '') },
     yAxis: { type: 'value' },
-    series: [{ type: 'bar', data: data.map(d => d.student_count) }]
+    series: [{ type: 'bar', data: data.map(d => d.student_count || 0) }]
   }
   chart.setOption(option)
 }
 
 function initScoreChart(data) {
   const chart = echarts.init(scoreChart.value)
+  const scores = data.proposalScores || []
   const option = {
     tooltip: { trigger: 'axis' },
     xAxis: { type: 'category', data: ['0-60', '60-70', '70-80', '80-90', '90-100'] },
@@ -158,11 +159,11 @@ function initScoreChart(data) {
     series: [{
       type: 'bar',
       data: [
-        data.proposalScores.filter(s => s < 60).length,
-        data.proposalScores.filter(s => s >= 60 && s < 70).length,
-        data.proposalScores.filter(s => s >= 70 && s < 80).length,
-        data.proposalScores.filter(s => s >= 80 && s < 90).length,
-        data.proposalScores.filter(s => s >= 90).length
+        scores.filter(s => s < 60).length,
+        scores.filter(s => s >= 60 && s < 70).length,
+        scores.filter(s => s >= 70 && s < 80).length,
+        scores.filter(s => s >= 80 && s < 90).length,
+        scores.filter(s => s >= 90).length
       ]
     }]
   }

@@ -17,6 +17,7 @@ export default {
       const origin = request.headers.get('Origin');
       const allowedOrigins = [
         'https://www.xiangnuan.cc.cd',
+        'https://xiangnuan.cc.cd',
         'https://graduation-management.pages.dev',
         env.FRONTEND_URL
       ].filter(Boolean);

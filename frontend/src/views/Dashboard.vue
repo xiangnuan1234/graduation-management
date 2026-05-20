@@ -100,26 +100,28 @@ const documentCount = ref(0)
 
 onMounted(async () => {
   const notiRes = await getNotificationList()
-  if (notiRes.code === 200) {
-    unreadCount.value = notiRes.data.unreadCount
-    notifications.value = notiRes.data.list.slice(0, 5)
+  if (notiRes.code === 200 && notiRes.data) {
+    // 适配数组格式的通知列表
+    const notifications = Array.isArray(notiRes.data) ? notiRes.data : (notiRes.data.list || [])
+    unreadCount.value = notifications.filter(n => !n.is_read).length
+    notifications.value = notifications.slice(0, 5)
   }
 
   if (userStore.isStudent) {
     const propRes = await getProposalList()
-    if (propRes.code === 200 && propRes.data.length > 0) {
+    if (propRes.code === 200 && propRes.data && propRes.data.length > 0) {
       const p = propRes.data[0]
       proposalStatus.value = p.status === 'pass' ? '已通过' : p.status === 'fail' ? '未通过' : p.status === 'submitted' ? '待评阅' : '待提交'
     }
 
     const midRes = await getMidtermList()
-    if (midRes.code === 200 && midRes.data.length > 0) {
+    if (midRes.code === 200 && midRes.data && midRes.data.length > 0) {
       const m = midRes.data[0]
       midtermStatus.value = m.status === 'pass' ? '已通过' : m.status === 'fail' ? '未通过' : m.status === 'submitted' ? '待检查' : '待填报'
     }
 
     const docRes = await getDocumentList()
-    if (docRes.code === 200) {
+    if (docRes.code === 200 && docRes.data) {
       documentCount.value = docRes.data.length
     }
   }

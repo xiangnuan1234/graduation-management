@@ -40,7 +40,7 @@ export function deleteUser(id) {
 
 export function resetPassword(id) {
   return request({
-    url: `/users/resetPassword/${id}`,
+    url: `/users/${id}/reset-password`,
     method: 'POST'
   })
 }

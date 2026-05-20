@@ -48,7 +48,10 @@
         v-model:current-page="query.page"
         v-model:page-size="query.pageSize"
         :total="total"
-        layout="total, prev, pager, next"
+        :page-sizes="[10, 20, 50, 100]"
+        layout="total, sizes, prev, pager, next, jumper"
+        @size-change="loadData"
+        @current-change="loadData"
         style="margin-top: 20px; justify-content: flex-end"
       />
     </el-card>

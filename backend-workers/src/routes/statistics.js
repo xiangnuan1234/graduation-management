@@ -12,16 +12,18 @@ export async function handleStatistics(request, env, user) {
     }
 
     try {
-      const userCount = await env.DB.prepare('SELECT COUNT(*) as count FROM user').first();
-      const topicCount = await env.DB.prepare('SELECT COUNT(*) as count FROM topic').first();
-      const applicationCount = await env.DB.prepare('SELECT COUNT(*) as count FROM application').first();
-      const proposalCount = await env.DB.prepare('SELECT COUNT(*) as count FROM proposal').first();
+      const studentCount = await env.DB.prepare("SELECT COUNT(*) as count FROM user WHERE role = 'student'").first();
+      const teacherCount = await env.DB.prepare("SELECT COUNT(*) as count FROM user WHERE role = 'teacher'").first();
+      const openTopics = await env.DB.prepare("SELECT COUNT(*) as count FROM topic WHERE status = 'open'").first();
+      const selectedStudents = await env.DB.prepare("SELECT COUNT(DISTINCT student_id) as count FROM application WHERE status = 'pass'").first();
 
       return successResponse({
-        users: userCount.count,
-        topics: topicCount.count,
-        applications: applicationCount.count,
-        proposals: proposalCount.count
+        users: {
+          student: studentCount.count,
+          teacher: teacherCount.count
+        },
+        openTopics: openTopics.count,
+        selectedStudents: selectedStudents.count
       });
     } catch (error) {
       return errorResponse(error.message, 500);
@@ -61,6 +63,100 @@ export async function handleStatistics(request, env, user) {
       `).all();
 
       return successResponse(results);
+    } catch (error) {
+      return errorResponse(error.message, 500);
+    }
+  }
+
+  // GET /api/statistics/topics/popularity - 课题热度统计
+  if (pathname === '/api/statistics/topics/popularity' && request.method === 'GET') {
+    if (!user || !roleAuth('admin')(user)) {
+      return errorResponse('权限不足', 403);
+    }
+
+    try {
+      const { results } = await env.DB.prepare(`
+        SELECT t.id, t.title, u.real_name as teacher_name, COUNT(a.id) as application_count
+        FROM topic t
+        LEFT JOIN user u ON t.teacher_id = u.id
+        LEFT JOIN application a ON t.id = a.topic_id
+        GROUP BY t.id, t.title, u.real_name
+        ORDER BY application_count DESC
+        LIMIT 10
+      `).all();
+
+      return successResponse(results);
+    } catch (error) {
+      return errorResponse(error.message, 500);
+    }
+  }
+
+  // GET /api/statistics/teachers/stats - 导师指导学生数统计
+  if (pathname === '/api/statistics/teachers/stats' && request.method === 'GET') {
+    if (!user || !roleAuth('admin')(user)) {
+      return errorResponse('权限不足', 403);
+    }
+
+    try {
+      const { results } = await env.DB.prepare(`
+        SELECT u.id, u.real_name, COUNT(a.id) as student_count
+        FROM user u
+        LEFT JOIN topic t ON u.id = t.teacher_id
+        LEFT JOIN application a ON t.id = a.topic_id AND a.status = 'pass'
+        WHERE u.role = 'teacher'
+        GROUP BY u.id, u.real_name
+        ORDER BY student_count DESC
+      `).all();
+
+      return successResponse(results);
+    } catch (error) {
+      return errorResponse(error.message, 500);
+    }
+  }
+
+  // GET /api/statistics/scores - 成绩分布统计
+  if (pathname === '/api/statistics/scores' && request.method === 'GET') {
+    if (!user || !roleAuth('admin')(user)) {
+      return errorResponse('权限不足', 403);
+    }
+
+    try {
+      const { results: proposalResults } = await env.DB.prepare(`
+        SELECT score FROM proposal WHERE score IS NOT NULL
+      `).all();
+
+      const proposalScores = proposalResults.map(r => r.score);
+
+      return successResponse({
+        proposalScores
+      });
+    } catch (error) {
+      return errorResponse(error.message, 500);
+    }
+  }
+
+  // GET /api/statistics/stages/progress - 各阶段进度统计
+  if (pathname === '/api/statistics/stages/progress' && request.method === 'GET') {
+    if (!user || !roleAuth('admin')(user)) {
+      return errorResponse('权限不足', 403);
+    }
+
+    try {
+      const proposalSubmitted = await env.DB.prepare("SELECT COUNT(*) as count FROM proposal WHERE status = 'submitted'").first();
+      const midtermSubmitted = await env.DB.prepare("SELECT COUNT(*) as count FROM midterm WHERE status = 'submitted'").first();
+      const documentSubmitted = await env.DB.prepare("SELECT COUNT(*) as count FROM document").first();
+
+      return successResponse({
+        proposal: {
+          submitted: proposalSubmitted.count
+        },
+        midterm: {
+          submitted: midtermSubmitted.count
+        },
+        document: {
+          submitted: documentSubmitted.count
+        }
+      });
     } catch (error) {
       return errorResponse(error.message, 500);
     }

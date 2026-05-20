@@ -15,7 +15,12 @@ export async function handleNotifications(request, env, user) {
         'SELECT * FROM notification WHERE user_id = ? ORDER BY created_at DESC'
       ).bind(user.id).all();
       
-      return successResponse(results);
+      const unreadCount = results.filter(n => !n.is_read).length;
+      
+      return successResponse({
+        list: results,
+        unreadCount
+      });
     } catch (error) {
       return errorResponse(error.message, 500);
     }
