@@ -16,7 +16,7 @@ database_id = "6143f66b-bff5-465a-9f51-88c69d489a25"
 # CORS 配置
 [vars]
 JWT_SECRET = "graduation-management-secret-2024"
-FRONTEND_URL = "https://xiangnuan.cc.cd"
+FRONTEND_URL = "https://graduation-management.pages.dev"
 
 # 自定义域名配置
 # 取消注释并替换为你的实际域名
