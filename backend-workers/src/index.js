@@ -14,9 +14,18 @@ export default {
   async fetch(request, env, ctx) {
     // CORS 预检请求
     if (request.method === 'OPTIONS') {
+      const origin = request.headers.get('Origin');
+      const allowedOrigins = [
+        'https://www.xiangnuan.cc.cd',
+        'https://graduation-management.pages.dev',
+        env.FRONTEND_URL
+      ].filter(Boolean);
+      
+      const allowOrigin = allowedOrigins.includes(origin) ? origin : allowedOrigins[0];
+      
       return new Response(null, {
         headers: {
-          'Access-Control-Allow-Origin': env.FRONTEND_URL || '*',
+          'Access-Control-Allow-Origin': allowOrigin,
           'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, PATCH, OPTIONS',
           'Access-Control-Allow-Headers': 'Content-Type, Authorization',
           'Access-Control-Max-Age': '86400'
@@ -88,7 +97,7 @@ export default {
       const headers = new Headers();
       object.writeHttpMetadata(headers);
       headers.set('etag', object.httpEtag);
-      headers.set('Access-Control-Allow-Origin', env.FRONTEND_URL || '*');
+      headers.set('Access-Control-Allow-Origin', origin || env.FRONTEND_URL || '*');
 
       return new Response(object.body, {
         headers,
