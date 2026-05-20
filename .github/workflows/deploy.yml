@@ -1,0 +1,60 @@
+name: Deploy to Cloudflare
+
+on:
+  push:
+    branches: [main, master]
+
+jobs:
+  deploy-workers:
+    runs-on: ubuntu-latest
+    name: Deploy Backend Workers
+    
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          
+      - name: Install dependencies
+        run: |
+          cd backend-workers
+          npm install
+          
+      - name: Deploy to Cloudflare Workers
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          workingDirectory: backend-workers
+          command: deploy
+
+  deploy-pages:
+    runs-on: ubuntu-latest
+    name: Deploy Frontend Pages
+    needs: deploy-workers
+    
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          
+      - name: Install dependencies
+        run: |
+          cd frontend
+          npm install
+          
+      - name: Build frontend
+        run: |
+          cd frontend
+          npm run build
+          
+      - name: Deploy to Cloudflare Pages
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          workingDirectory: frontend
+          command: pages deploy dist --project-name=graduation-management
