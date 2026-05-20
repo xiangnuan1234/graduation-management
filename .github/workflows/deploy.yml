@@ -35,8 +35,8 @@ jobs:
           npm install
           npm run build
           # Try to create project if it doesn't exist
-          npx wrangler pages project create graduation-management || true
-          npx wrangler pages deploy dist --project-name=graduation-management --commit-dirty=true
+          npx wrangler pages project create graduation-management --production-branch=master || true
+          npx wrangler pages deploy dist --project-name=graduation-management --branch=master --commit-dirty=true
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.test }}
           CLOUDFLARE_ACCOUNT_ID: 694b74c6d5ec82483435f345f50e6af6
