@@ -23,11 +23,11 @@ jobs:
           npm install
           
       - name: Deploy to Cloudflare Workers
-        uses: cloudflare/wrangler-action@v3
+        uses: cloudflare/wrangler-action@v4
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: 694b74c6d5ec82483435f345f50e6af6
           workingDirectory: backend-workers
-          command: deploy
 
   deploy-pages:
     runs-on: ubuntu-latest
@@ -53,8 +53,9 @@ jobs:
           npm run build
           
       - name: Deploy to Cloudflare Pages
-        uses: cloudflare/wrangler-action@v3
+        uses: cloudflare/wrangler-action@v4
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: 694b74c6d5ec82483435f345f50e6af6
           workingDirectory: frontend
           command: pages deploy dist --project-name=graduation-management
