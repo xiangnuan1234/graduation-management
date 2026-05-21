@@ -3,7 +3,7 @@ import { useUserStore } from '@/store/user'
 
 const request = axios.create({
   baseURL: import.meta.env.VITE_API_BASE_URL || 'https://graduation-management-api.wangbang-2023.workers.dev/api',
-  timeout: 10000,
+  timeout: 30000, // 增加到30秒
 })
 
 request.interceptors.request.use(

@@ -8,7 +8,12 @@ export async function handleTopics(request, env, user) {
   // GET /api/topics - 获取课题列表
   if (pathname === '/api/topics' && request.method === 'GET') {
     try {
-      let query = 'SELECT t.*, u.real_name as teacher_name FROM topic t LEFT JOIN user u ON t.teacher_id = u.id';
+      let query = `
+        SELECT t.*, u.real_name as teacher_name,
+          (SELECT COUNT(*) FROM application a WHERE a.topic_id = t.id AND a.status = 'pass') as selected_count
+        FROM topic t 
+        LEFT JOIN user u ON t.teacher_id = u.id
+      `;
       const params = [];
 
       if (user?.role === 'student') {
@@ -21,6 +26,31 @@ export async function handleTopics(request, env, user) {
       const { results } = await env.DB.prepare(query).bind(...params).all();
       return successResponse(results);
     } catch (error) {
+      console.error('Error in GET /api/topics:', error);
+      return errorResponse(error.message, 500);
+    }
+  }
+
+  // GET /api/topics/my-topics - 获取我发布的课题（教师）
+  if (pathname === '/api/topics/my-topics' && request.method === 'GET') {
+    if (!user || !roleAuth('teacher', 'admin')(user)) {
+      return errorResponse('权限不足', 403);
+    }
+
+    try {
+      const query = `
+        SELECT t.*, u.real_name as teacher_name,
+          (SELECT COUNT(*) FROM application a WHERE a.topic_id = t.id AND a.status = 'pass') as selected_count
+        FROM topic t 
+        LEFT JOIN user u ON t.teacher_id = u.id 
+        WHERE t.teacher_id = ?
+        ORDER BY t.created_at DESC
+      `;
+      
+      const { results } = await env.DB.prepare(query).bind(user.id).all();
+      return successResponse(results || []);
+    } catch (error) {
+      console.error('Error in GET /api/topics/my-topics:', error);
       return errorResponse(error.message, 500);
     }
   }
