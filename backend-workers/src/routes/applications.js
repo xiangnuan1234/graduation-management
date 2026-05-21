@@ -21,9 +21,12 @@ export async function handleApplications(request, env, user) {
 
       query += ' ORDER BY a.apply_time DESC';
       
+      console.log('Query:', query, 'Params:', params);
       const { results } = await env.DB.prepare(query).bind(...params).all();
-      return successResponse(results);
+      console.log('Results:', results);
+      return successResponse(results || []);
     } catch (error) {
+      console.error('Error in GET /api/applications:', error);
       return errorResponse(error.message, 500);
     }
   }
@@ -35,19 +38,43 @@ export async function handleApplications(request, env, user) {
     }
 
     try {
-      const { topic_id, priority } = await request.json();
+      const data = await request.json();
+      // 支持两种格式：{ topic_id, priority } 或 { topic_ids: [...] }
+      let topicId;
+      if (data.topic_ids && Array.isArray(data.topic_ids) && data.topic_ids.length > 0) {
+        topicId = data.topic_ids[0];
+      } else {
+        topicId = data.topic_id;
+      }
+      
+      if (!topicId) {
+        return errorResponse('请选择要申请的课题', 400);
+      }
+      
+      const priority = data.priority || 1;
+      
+      // 检查是否已经申请过该课题
+      const existing = await env.DB.prepare(
+        'SELECT id FROM application WHERE topic_id = ? AND student_id = ?'
+      ).bind(topicId, user.id).first();
+      
+      if (existing) {
+        return errorResponse('您已经申请过该课题', 400);
+      }
+      
       await env.DB.prepare(
         'INSERT INTO application (topic_id, student_id, priority) VALUES (?, ?, ?)'
-      ).bind(topic_id, user.id, priority || 1).run();
+      ).bind(topicId, user.id, priority).run();
 
       return successResponse(null, '申请提交成功');
     } catch (error) {
+      console.error('Error in POST /api/applications:', error);
       return errorResponse(error.message, 500);
     }
   }
 
   // PUT /api/applications/:id/review - 审核申请（教师）
-  const appIdMatch = pathname.match(/^\/api\/applications\/(\d+)\/review$/);
+  const appIdMatch = pathname.match(/^\/api\/applications\/(\d+)\/(review|approve)$/);
   if (appIdMatch && request.method === 'PUT') {
     if (!user || !roleAuth('teacher')(user)) {
       return errorResponse('权限不足', 403);

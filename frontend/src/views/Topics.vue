@@ -104,7 +104,7 @@
       <el-form label-width="80px">
         <el-form-item label="选择志愿">
           <el-checkbox-group v-model="selectedTopics">
-            <el-checkbox :label="currentTopic?.id">{{ currentTopic?.title }}</el-checkbox>
+            <el-checkbox :value="currentTopic?.id">{{ currentTopic?.title }}</el-checkbox>
           </el-checkbox-group>
         </el-form-item>
       </el-form>
