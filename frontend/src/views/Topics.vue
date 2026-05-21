@@ -29,6 +29,27 @@
       </el-table>
     </el-card>
 
+    <el-card v-if="userStore.isStudent" style="margin-top: 20px">
+      <template #header>
+        <span>我的选题</span>
+      </template>
+      <el-table :data="myApplications" border>
+        <el-table-column prop="id" label="ID" width="60" />
+        <el-table-column prop="topic_title" label="课题名称" />
+        <el-table-column prop="teacher_name" label="导师" />
+        <el-table-column prop="priority" label="志愿" width="80" />
+        <el-table-column prop="status" label="审核状态" width="100">
+          <template #default="{ row }">
+            <el-tag v-if="row.status === 'pending'" type="warning">待审核</el-tag>
+            <el-tag v-else-if="row.status === 'pass'" type="success">已通过</el-tag>
+            <el-tag v-else type="danger">已拒绝</el-tag>
+          </template>
+        </el-table-column>
+        <el-table-column prop="apply_time" label="申请时间" />
+      </el-table>
+      <el-empty v-if="!myApplications || myApplications.length === 0" description="暂无申请记录" />
+    </el-card>
+
     <el-card style="margin-top: 20px">
       <template #header>
         <span>{{ userStore.isTeacher ? '全部课题' : '选题中心' }}</span>
@@ -120,12 +141,13 @@
 import { ref, reactive, onMounted } from 'vue'
 import { useUserStore } from '@/store/user'
 import { getTopicList, getMyTopics, createTopic, updateTopic } from '@/api/topic'
-import { applyTopic } from '@/api/application'
+import { applyTopic, getApplicationList } from '@/api/application'
 import { ElMessage } from 'element-plus'
 
 const userStore = useUserStore()
 const topics = ref([])
 const myTopics = ref([])
+const myApplications = ref([])
 const dialogVisible = ref(false)
 const detailVisible = ref(false)
 const applyVisible = ref(false)
@@ -157,6 +179,12 @@ async function loadData() {
     const myRes = await getMyTopics()
     if (myRes.code === 200) {
       myTopics.value = myRes.data
+    }
+  }
+  if (userStore.isStudent) {
+    const appRes = await getApplicationList()
+    if (appRes.code === 200) {
+      myApplications.value = appRes.data
     }
   }
 }
@@ -211,6 +239,13 @@ async function submitApplication() {
   if (res.code === 200) {
     ElMessage.success('申请成功')
     applyVisible.value = false
+    // 刷新学生的申请列表
+    if (userStore.isStudent) {
+      const appRes = await getApplicationList()
+      if (appRes.code === 200) {
+        myApplications.value = appRes.data
+      }
+    }
   }
 }
 </script>
