@@ -44,6 +44,44 @@ export async function handleNotifications(request, env, user) {
     }
   }
 
+  // POST /api/notifications/broadcast - 广播通知（仅管理员）
+  if (pathname === '/api/notifications/broadcast' && request.method === 'POST') {
+    if (!user || user.role !== 'admin') {
+      return errorResponse('权限不足', 403);
+    }
+
+    try {
+      const { title, content, role } = await request.json();
+      
+      // 获取目标用户列表
+      let users;
+      if (role) {
+        const result = await env.DB.prepare(
+          'SELECT id FROM user WHERE role = ?'
+        ).bind(role).all();
+        users = result.results;
+      } else {
+        const result = await env.DB.prepare(
+          'SELECT id FROM user'
+        ).all();
+        users = result.results;
+      }
+
+      // 为每个用户创建通知
+      let sent = 0;
+      for (const u of users) {
+        await env.DB.prepare(
+          'INSERT INTO notification (user_id, title, content) VALUES (?, ?, ?)'
+        ).bind(u.id, title, content).run();
+        sent++;
+      }
+
+      return successResponse(null, `成功发送给${sent}个用户`);
+    } catch (error) {
+      return errorResponse(error.message, 500);
+    }
+  }
+
   // PUT /api/notifications/:id/read - 标记为已读
   const notifIdMatch = pathname.match(/^\/api\/notifications\/(\d+)\/read$/);
   if (notifIdMatch && request.method === 'PUT') {

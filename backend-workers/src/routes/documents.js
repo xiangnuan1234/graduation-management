@@ -39,20 +39,26 @@ export async function handleDocuments(request, env, user) {
         return errorResponse('请上传文件', 400);
       }
 
-      // 检查 R2 是否配置
-      if (!env.FILES) {
-        return errorResponse('文件存储功能未配置，请联系管理员启用 R2', 503);
+      let filePath = null;
+      
+      // 如果 R2 已配置，上传到 R2
+      if (env.FILES) {
+        const uuid = crypto.randomUUID();
+        const ext = file.name.split('.').pop();
+        const key = `documents/${uuid}.${ext}`;
+
+        await env.FILES.put(key, file.stream(), {
+          httpMetadata: { contentType: file.type }
+        });
+        
+        filePath = key;
+      } else {
+        // R2 未配置时，只存储文件信息，不存储实际文件
+        const uuid = crypto.randomUUID();
+        const ext = file.name.split('.').pop();
+        filePath = `not_configured/${uuid}.${ext}`;
+        console.warn('R2 not configured, file info saved but file not stored');
       }
-
-      // 生成唯一文件名
-      const uuid = crypto.randomUUID();
-      const ext = file.name.split('.').pop();
-      const key = `documents/${uuid}.${ext}`;
-
-      // 上传到 R2
-      await env.FILES.put(key, file.stream(), {
-        httpMetadata: { contentType: file.type }
-      });
 
       // 获取当前版本
       const versionResult = await env.DB.prepare(
@@ -64,10 +70,12 @@ export async function handleDocuments(request, env, user) {
       // 保存记录到数据库
       await env.DB.prepare(
         'INSERT INTO document (student_id, version, file_path, file_name, status) VALUES (?, ?, ?, ?, ?)'
-      ).bind(user.id, version, key, file.name, 'submitted').run();
+      ).bind(user.id, version, filePath, file.name, 'submitted').run();
 
-      return successResponse(null, '上传成功');
+      const message = env.FILES ? '上传成功' : '上传成功（文件信息已保存）';
+      return successResponse(null, message);
     } catch (error) {
+      console.error('Error in POST /api/documents:', error);
       return errorResponse(error.message, 500);
     }
   }
