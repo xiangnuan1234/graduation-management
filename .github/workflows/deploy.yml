@@ -30,7 +30,7 @@ jobs:
           echo "Creating R2 bucket if not exists..."
           npx wrangler r2 bucket create graduation-files || echo "Bucket already exists or creation failed (may already exist)"
         env:
-          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_API_TOKEN: ${{ secrets.test }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
         continue-on-error: true
       
@@ -50,7 +50,7 @@ jobs:
           cd backend-workers
           npx wrangler deploy
         env:
-          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_API_TOKEN: ${{ secrets.test }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
 
   deploy-pages:
@@ -85,5 +85,5 @@ jobs:
           npx wrangler pages project create graduation-management --production-branch=master || true
           npx wrangler pages deploy dist --project-name=graduation-management --branch=master --commit-dirty=true
         env:
-          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_API_TOKEN: ${{ secrets.test }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
