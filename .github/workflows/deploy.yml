@@ -25,12 +25,11 @@ jobs:
           npm install
       
       - name: Deploy to Cloudflare Workers
-        run: |
-          cd backend-workers
-          npx wrangler deploy
-        env:
-          CLOUDFLARE_API_TOKEN: ${{ secrets.test }}
-          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.test }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          workingDirectory: backend-workers
 
   deploy-pages:
     runs-on: ubuntu-latest
@@ -58,11 +57,9 @@ jobs:
           npm run build
       
       - name: Deploy to Cloudflare Pages
-        run: |
-          cd frontend
-          # Try to create project if it doesn't exist
-          npx wrangler pages project create graduation-management --production-branch=master || true
-          npx wrangler pages deploy dist --project-name=graduation-management --branch=master --commit-dirty=true
-        env:
-          CLOUDFLARE_API_TOKEN: ${{ secrets.test }}
-          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.test }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          command: pages deploy dist --project-name=graduation-management --branch=master --commit-dirty=true
+          workingDirectory: frontend
