@@ -24,6 +24,11 @@ jobs:
           cd backend-workers
           npm install
       
+      - name: Update Wrangler to Latest
+        run: |
+          cd backend-workers
+          npm install --save-dev wrangler@latest
+      
       - name: Deploy to Cloudflare Workers
         run: |
           cd backend-workers
@@ -50,6 +55,11 @@ jobs:
         run: |
           cd frontend
           npm install
+      
+      - name: Install Wrangler
+        run: |
+          cd frontend
+          npm install --save-dev wrangler@latest
       
       - name: Build Frontend
         run: |
