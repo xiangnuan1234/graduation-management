@@ -29,7 +29,7 @@ jobs:
           cd backend-workers
           export CLOUDFLARE_API_TOKEN="${{ secrets.test }}"
           export CLOUDFLARE_ACCOUNT_ID="${{ secrets.CLOUDFLARE_ACCOUNT_ID }}"
-          npx wrangler deploy --no-telemetry
+          npx wrangler deploy
 
   deploy-pages:
     runs-on: ubuntu-latest
@@ -61,4 +61,4 @@ jobs:
           cd frontend
           export CLOUDFLARE_API_TOKEN="${{ secrets.test }}"
           export CLOUDFLARE_ACCOUNT_ID="${{ secrets.CLOUDFLARE_ACCOUNT_ID }}"
-          npx wrangler pages deploy dist --project-name=graduation-management --branch=master --commit-dirty=true --no-telemetry
+          npx wrangler pages deploy dist --project-name=graduation-management --branch=master --commit-dirty=true
