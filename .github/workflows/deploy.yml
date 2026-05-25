@@ -24,27 +24,6 @@ jobs:
           cd backend-workers
           npm install
       
-      - name: Create R2 Bucket (if not exists)
-        run: |
-          cd backend-workers
-          echo "Creating R2 bucket if not exists..."
-          npx wrangler r2 bucket create graduation-files || echo "Bucket already exists or creation failed (may already exist)"
-        env:
-          CLOUDFLARE_API_TOKEN: ${{ secrets.test }}
-          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-        continue-on-error: true
-      
-      - name: Verify R2 Configuration
-        run: |
-          cd backend-workers
-          echo "Verifying R2 configuration in wrangler.toml..."
-          if grep -q '\[\[r2_buckets\]\]' wrangler.toml; then
-            echo "✓ R2 configuration found"
-          else
-            echo "✗ R2 configuration not found!"
-            exit 1
-          fi
-      
       - name: Deploy to Cloudflare Workers
         run: |
           cd backend-workers
