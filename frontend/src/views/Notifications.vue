@@ -58,7 +58,7 @@
 </template>
 
 <script setup>
-import { ref, reactive, onMounted } from 'vue'
+import { ref, reactive, onMounted, inject } from 'vue'
 import { useUserStore } from '@/store/user'
 import { getNotificationList, sendNotification, broadcastNotification, markAsRead, markAllAsRead } from '@/api/notification'
 import { getUserList } from '@/api/user'
@@ -76,6 +76,7 @@ const form = reactive({
   content: ''
 })
 const query = reactive({ is_read: '' })
+const refreshUnreadCount = inject('refreshUnreadCount', () => {})
 
 onMounted(() => { loadData() })
 
@@ -90,6 +91,7 @@ async function handleRowClick(row) {
   if (!row.is_read) {
     await markAsRead(row.id)
     row.is_read = true
+    refreshUnreadCount()
   }
 }
 
@@ -97,6 +99,7 @@ async function markAllRead() {
   await markAllAsRead()
   ElMessage.success('已全部标记为已读')
   loadData()
+  refreshUnreadCount()
 }
 
 async function handleSend() {

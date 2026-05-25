@@ -101,5 +101,22 @@ export async function handleNotifications(request, env, user) {
     }
   }
 
+  // PUT /api/notifications/readAll - 全部标记为已读
+  if (pathname === '/api/notifications/readAll' && request.method === 'PUT') {
+    if (!user) {
+      return errorResponse('未登录', 401);
+    }
+
+    try {
+      await env.DB.prepare(
+        'UPDATE notification SET is_read = TRUE WHERE user_id = ?'
+      ).bind(user.id).run();
+
+      return successResponse(null, '已全部标记为已读');
+    } catch (error) {
+      return errorResponse(error.message, 500);
+    }
+  }
+
   return null;
 }

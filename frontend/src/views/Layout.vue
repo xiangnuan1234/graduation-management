@@ -88,7 +88,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, reactive, onMounted, provide } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useUserStore } from '@/store/user'
 import { getNotificationList } from '@/api/notification'
@@ -101,12 +101,18 @@ const userStore = useUserStore()
 const collapsed = ref(false)
 const unreadCount = ref(0)
 
-onMounted(async () => {
+async function loadUnreadCount() {
   const res = await getNotificationList()
   if (res.code === 200) {
     unreadCount.value = res.data.unreadCount
   }
+}
+
+onMounted(() => {
+  loadUnreadCount()
 })
+
+provide('refreshUnreadCount', loadUnreadCount)
 
 async function handleCommand(command) {
   if (command === 'logout') {
