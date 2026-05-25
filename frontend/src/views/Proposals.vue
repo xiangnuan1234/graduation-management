@@ -42,7 +42,7 @@
               v-if="row.file_path && row.status !== 'pass'"
               size="small"
               type="primary"
-              @click="openFile(row.file_path)"
+              @click="openFile(row.id)"
             >查看文件</el-button>
             <el-button
               v-if="row.file_path && row.status !== 'pass'"
@@ -101,7 +101,7 @@
 <script setup>
 import { ref, reactive, computed, onMounted } from 'vue'
 import { useUserStore } from '@/store/user'
-import { getProposalList, submitProposal, reviewProposal } from '@/api/proposal'
+import { getProposalList, submitProposal, reviewProposal, downloadProposalFile } from '@/api/proposal'
 import { ElMessage } from 'element-plus'
 
 const userStore = useUserStore()
@@ -169,8 +169,20 @@ async function submitFile() {
   }
 }
 
-function openFile(path) {
-  window.open('/' + path)
+async function openFile(id) {
+  try {
+    const blob = await downloadProposalFile(id)
+    const url = window.URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = `proposal_${id}.pdf`
+    document.body.appendChild(a)
+    a.click()
+    window.URL.revokeObjectURL(url)
+    document.body.removeChild(a)
+  } catch (error) {
+    ElMessage.error('文件下载失败')
+  }
 }
 
 function openReviewDialog(row) {

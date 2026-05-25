@@ -24,3 +24,11 @@ export function updateDocumentStatus(id, status) {
     data: { status }
   })
 }
+
+export function downloadDocumentFile(id) {
+  return request({
+    url: `/documents/${id}/file`,
+    method: 'GET',
+    responseType: 'blob'
+  })
+}

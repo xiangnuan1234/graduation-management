@@ -40,6 +40,7 @@ export async function handleProposals(request, env, user) {
       }
 
       let filePath = null;
+      let fileData = null;
       
       // 如果 R2 已配置，上传到 R2
       if (env.FILES) {
@@ -53,19 +54,40 @@ export async function handleProposals(request, env, user) {
         
         filePath = key;
       } else {
-        // R2 未配置时，只存储文件信息，不存储实际文件
+        // R2 未配置时，将文件转为 Base64 存储在数据库
+        const arrayBuffer = await file.arrayBuffer();
+        const bytes = new Uint8Array(arrayBuffer);
+        
+        // 检查文件大小（限制为 5MB）
+        if (bytes.length > 5 * 1024 * 1024) {
+          return errorResponse('文件大小不能超过 5MB', 400);
+        }
+        
+        // 转换为 Base64
+        let binary = '';
+        for (let i = 0; i < bytes.length; i++) {
+          binary += String.fromCharCode(bytes[i]);
+        }
+        fileData = btoa(binary);
+        
         const uuid = crypto.randomUUID();
         const ext = file.name.split('.').pop();
-        filePath = `not_configured/${uuid}.${ext}`;
-        console.warn('R2 not configured, file info saved but file not stored');
+        filePath = `db_storage/${uuid}.${ext}`;
+        console.log(`File converted to Base64, size: ${bytes.length} bytes`);
       }
 
       // 保存记录到数据库
-      await env.DB.prepare(
-        'INSERT INTO proposal (student_id, file_path, status) VALUES (?, ?, ?)'
-      ).bind(user.id, filePath, 'submitted').run();
+      if (fileData) {
+        await env.DB.prepare(
+          'INSERT INTO proposal (student_id, file_path, file_data, status) VALUES (?, ?, ?, ?)'
+        ).bind(user.id, filePath, fileData, 'submitted').run();
+      } else {
+        await env.DB.prepare(
+          'INSERT INTO proposal (student_id, file_path, status) VALUES (?, ?, ?)'
+        ).bind(user.id, filePath, 'submitted').run();
+      }
 
-      const message = env.FILES ? '提交成功' : '提交成功（文件信息已保存）';
+      const message = env.FILES ? '提交成功' : '提交成功（文件已保存到数据库）';
       return successResponse(null, message);
     } catch (error) {
       console.error('Error in POST /api/proposals:', error);
@@ -90,6 +112,44 @@ export async function handleProposals(request, env, user) {
 
       return successResponse(null, '评阅成功');
     } catch (error) {
+      return errorResponse(error.message, 500);
+    }
+  }
+
+  // GET /api/proposals/:id/file - 获取文件内容
+  const fileIdMatch = pathname.match(/^\/api\/proposals\/(\d+)\/file$/);
+  if (fileIdMatch && request.method === 'GET') {
+    try {
+      const proposalId = fileIdMatch[1];
+      const result = await env.DB.prepare(
+        'SELECT file_path, file_data FROM proposal WHERE id = ?'
+      ).bind(proposalId).first();
+
+      if (!result || !result.file_data) {
+        return errorResponse('文件不存在', 404);
+      }
+
+      // 解码 Base64
+      const binaryString = atob(result.file_data);
+      const bytes = new Uint8Array(binaryString.length);
+      for (let i = 0; i < binaryString.length; i++) {
+        bytes[i] = binaryString.charCodeAt(i);
+      }
+
+      // 推断 MIME 类型
+      let contentType = 'application/octet-stream';
+      if (result.file_path.endsWith('.pdf')) contentType = 'application/pdf';
+      else if (result.file_path.endsWith('.docx')) contentType = 'application/vnd.openxmlformats-officedocument.wordprocessingml.document';
+      else if (result.file_path.endsWith('.doc')) contentType = 'application/msword';
+
+      return new Response(bytes, {
+        headers: {
+          'Content-Type': contentType,
+          'Content-Disposition': `attachment; filename="${result.file_path}"`
+        }
+      });
+    } catch (error) {
+      console.error('Error in GET /api/proposals/:id/file:', error);
       return errorResponse(error.message, 500);
     }
   }

@@ -72,6 +72,40 @@ export async function handleAuth(request, env, user) {
     }
   }
 
+  // POST /api/auth/register
+  if (pathname === '/api/auth/register' && request.method === 'POST') {
+    try {
+      const { username, password, real_name, role, major, email } = await request.json();
+      
+      if (!username || !password || !real_name) {
+        return errorResponse('用户名、密码和姓名不能为空', 400);
+      }
+
+      // 检查用户名是否已存在
+      const existingUser = await env.DB.prepare('SELECT * FROM user WHERE username = ?').bind(username).first();
+      if (existingUser) {
+        return errorResponse('用户名已存在', 400);
+      }
+
+      // 默认角色为学生，除非明确指定
+      const userRole = role || 'student';
+      
+      // 只有管理员可以创建教师和管理员账户
+      if ((userRole === 'admin' || userRole === 'teacher') && (!user || user.role !== 'admin')) {
+        return errorResponse('权限不足，无法创建该类型账户', 403);
+      }
+
+      const hashedPassword = await hashPassword(password);
+      await env.DB.prepare(
+        'INSERT INTO user (username, password, real_name, role, major, email) VALUES (?, ?, ?, ?, ?, ?)'
+      ).bind(username, hashedPassword, real_name, userRole, major || null, email || null).run();
+      
+      return successResponse(null, '注册成功');
+    } catch (error) {
+      return errorResponse(error.message, 500);
+    }
+  }
+
   // POST /api/auth/logout
   if (pathname === '/api/auth/logout' && request.method === 'POST') {
     return successResponse(null, '登出成功');

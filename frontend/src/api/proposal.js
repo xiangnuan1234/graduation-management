@@ -33,3 +33,11 @@ export function reviewProposal(id, data) {
     data
   })
 }
+
+export function downloadProposalFile(id) {
+  return request({
+    url: `/proposals/${id}/file`,
+    method: 'GET',
+    responseType: 'blob'
+  })
+}
