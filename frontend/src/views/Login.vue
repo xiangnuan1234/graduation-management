@@ -164,11 +164,13 @@ async function handleRegister() {
         registerForm.email = ''
         registerForm.major = ''
       } else {
-        ElMessage.error(res.message)
+        ElMessage.error(res.message || '注册失败')
       }
     } catch (error) {
       loading.value = false
-      ElMessage.error('注册失败，请稍后重试')
+      // 从错误响应中提取具体错误信息
+      const errorMessage = error.response?.data?.message || '注册失败，请稍后重试'
+      ElMessage.error(errorMessage)
     }
   })
 }
