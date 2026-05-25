@@ -7,6 +7,7 @@ import { handleMidterms } from './routes/midterms';
 import { handleDocuments } from './routes/documents';
 import { handleNotifications } from './routes/notifications';
 import { handleStatistics } from './routes/statistics';
+import { handleStorage } from './routes/storage';
 import { authMiddleware, roleAuth } from './middleware';
 import { errorResponse, successResponse } from './utils';
 
@@ -81,6 +82,10 @@ export default {
     // 统计路由
     else if (pathname.startsWith('/api/statistics')) {
       response = await handleStatistics(request, env, user);
+    }
+    // 存储管理路由
+    else if (pathname.startsWith('/api/storage')) {
+      response = await handleStorage(request, env, user);
     }
     // 文件访问路由（需要 R2 配置）
     else if (pathname.startsWith('/files/')) {

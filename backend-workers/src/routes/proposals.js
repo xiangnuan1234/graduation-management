@@ -1,5 +1,6 @@
 import { successResponse, errorResponse } from '../utils.js';
 import { roleAuth } from '../middleware.js';
+import { checkUploadAllowed } from '../utils/r2-monitor.js';
 
 export async function handleProposals(request, env, user) {
   const url = new URL(request.url);
@@ -32,11 +33,23 @@ export async function handleProposals(request, env, user) {
     }
 
     try {
+      // 检查 R2 额度是否允许上传
+      const uploadCheck = await checkUploadAllowed(env);
+      if (!uploadCheck.allowed) {
+        return errorResponse(uploadCheck.reason, 403);
+      }
+
       const formData = await request.formData();
       const file = formData.get('file');
       
       if (!file) {
         return errorResponse('请上传文件', 400);
+      }
+
+      // 检查文件大小
+      const fileSize = file.size;
+      if (fileSize > uploadCheck.maxFileSize) {
+        return errorResponse(`文件大小超过限制。当前最大允许: ${uploadCheck.maxFileSizeFormatted}`, 400);
       }
 
       let filePath = null;
@@ -53,6 +66,7 @@ export async function handleProposals(request, env, user) {
         });
         
         filePath = key;
+        console.log(`File uploaded to R2: ${key}, size: ${fileSize} bytes`);
       } else {
         // R2 未配置时，将文件转为 Base64 存储在数据库
         const arrayBuffer = await file.arrayBuffer();

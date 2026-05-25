@@ -1,5 +1,53 @@
 <template>
   <div class="documents">
+    <!-- R2 使用统计卡片 -->
+    <el-card v-if="userStore.isStudent && storageStats" style="margin-bottom: 20px">
+      <template #header>
+        <div class="card-header">
+          <span>存储空间使用情况</span>
+          <el-tag :type="storageStatusType">{{ storageStatusText }}</el-tag>
+        </div>
+      </template>
+      <el-progress 
+        :percentage="parseFloat(storageStats.storage?.usagePercent || 0)" 
+        :color="storageProgressColor"
+        :stroke-width="20"
+      >
+        <template #default="{ percentage }">
+          <span class="percentage-label">{{ storageStats.storage?.usedFormatted }} / {{ storageStats.storage?.limitFormatted }} ({{ percentage }}%)</span>
+        </template>
+      </el-progress>
+      <div class="storage-info">
+        <el-alert 
+          v-if="!storageStats.uploadAllowed" 
+          title="存储空间不足" 
+          type="error" 
+          :closable="false"
+          show-icon
+        >
+          <p>R2 存储空间已接近免费额度上限（10GB），为避免产生额外费用，已暂停文件上传功能。</p>
+        </el-alert>
+        <el-alert 
+          v-else-if="storageStats.status === 'warning'" 
+          title="存储空间警告" 
+          type="warning" 
+          :closable="false"
+          show-icon
+        >
+          <p>存储空间使用已超过 85%，请注意控制文件大小。当前最大允许上传：{{ storageStats.maxFileSizeFormatted }}</p>
+        </el-alert>
+        <el-alert 
+          v-else
+          title="存储状态正常" 
+          type="success" 
+          :closable="false"
+          show-icon
+        >
+          <p>当前最大允许上传文件大小：{{ storageStats.maxFileSizeFormatted }}</p>
+        </el-alert>
+      </div>
+    </el-card>
+
     <el-card v-if="userStore.isStudent">
       <template #header>
         <div class="card-header">
@@ -92,9 +140,10 @@
 </template>
 
 <script setup>
-import { ref, reactive, onMounted } from 'vue'
+import { ref, reactive, onMounted, computed } from 'vue'
 import { useUserStore } from '@/store/user'
 import { getDocumentList, uploadDocument, updateDocumentStatus } from '@/api/document'
+import { getStorageUsage } from '@/api/storage'
 import { ElMessage } from 'element-plus'
 
 const userStore = useUserStore()
@@ -105,8 +154,55 @@ const uploadRef = ref()
 const selectedFile = ref(null)
 const statusDocId = ref(null)
 const statusForm = reactive({ status: 'submitted' })
+const storageStats = ref(null)
 
-onMounted(() => { loadData() })
+// 计算存储状态类型
+const storageStatusType = computed(() => {
+  if (!storageStats.value) return 'info'
+  switch (storageStats.value.status) {
+    case 'critical': return 'danger'
+    case 'warning': return 'warning'
+    case 'notice': return ''
+    default: return 'success'
+  }
+})
+
+// 计算存储状态文本
+const storageStatusText = computed(() => {
+  if (!storageStats.value) return '未知'
+  switch (storageStats.value.status) {
+    case 'critical': return '严重 - 已停止上传'
+    case 'warning': return '警告 - 空间紧张'
+    case 'notice': return '注意 - 使用较多'
+    default: return '正常'
+  }
+})
+
+// 计算进度条颜色
+const storageProgressColor = computed(() => {
+  if (!storageStats.value) return '#67c23a'
+  const percent = parseFloat(storageStats.value.storage?.usagePercent || 0)
+  if (percent >= 95) return '#f56c6c'
+  if (percent >= 85) return '#e6a23c'
+  if (percent >= 70) return '#409eff'
+  return '#67c23a'
+})
+
+onMounted(() => { 
+  loadData()
+  loadStorageStats()
+})
+
+async function loadStorageStats() {
+  try {
+    const res = await getStorageUsage()
+    if (res.code === 200) {
+      storageStats.value = res.data
+    }
+  } catch (error) {
+    console.error('Failed to load storage stats:', error)
+  }
+}
 
 async function loadData() {
   const res = await getDocumentList()
@@ -127,6 +223,12 @@ async function uploadFile() {
   if (!selectedFile.value) {
     return ElMessage.warning('请选择文件')
   }
+
+  // 检查是否允许上传
+  if (storageStats.value && !storageStats.value.uploadAllowed) {
+    return ElMessage.error('存储空间不足，无法上传文件')
+  }
+
   const formData = new FormData()
   formData.append('file', selectedFile.value)
   const res = await uploadDocument(formData)
@@ -134,6 +236,7 @@ async function uploadFile() {
     ElMessage.success('上传成功')
     uploadVisible.value = false
     loadData()
+    loadStorageStats() // 重新加载存储统计
   }
 }
 
@@ -167,5 +270,16 @@ async function submitStatus() {
   margin-top: 10px;
   color: #909399;
   font-size: 12px;
+}
+.percentage-label {
+  font-size: 14px;
+  font-weight: bold;
+}
+.storage-info {
+  margin-top: 15px;
+}
+.storage-info p {
+  margin: 5px 0 0 0;
+  font-size: 13px;
 }
 </style>

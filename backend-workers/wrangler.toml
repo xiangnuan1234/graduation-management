@@ -8,10 +8,10 @@ binding = "DB"
 database_name = "graduation-db"
 database_id = "6143f66b-bff5-465a-9f51-88c69d489a25"
 
-# R2 存储桶绑定（需要时取消注释）
-# [[r2_buckets]]
-# binding = "FILES"
-# bucket_name = "graduation-files"
+# R2 存储桶绑定
+[[r2_buckets]]
+binding = "FILES"
+bucket_name = "graduation-files"
 
 # CORS 配置
 [vars]
