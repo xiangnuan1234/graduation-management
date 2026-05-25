@@ -25,11 +25,11 @@ jobs:
           npm install
       
       - name: Deploy to Cloudflare Workers
-        uses: cloudflare/wrangler-action@v3
-        with:
-          apiToken: ${{ secrets.test }}
-          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          workingDirectory: backend-workers
+        run: |
+          cd backend-workers
+          export CLOUDFLARE_API_TOKEN="${{ secrets.test }}"
+          export CLOUDFLARE_ACCOUNT_ID="${{ secrets.CLOUDFLARE_ACCOUNT_ID }}"
+          npx wrangler deploy --no-telemetry
 
   deploy-pages:
     runs-on: ubuntu-latest
@@ -57,9 +57,8 @@ jobs:
           npm run build
       
       - name: Deploy to Cloudflare Pages
-        uses: cloudflare/wrangler-action@v3
-        with:
-          apiToken: ${{ secrets.test }}
-          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          command: pages deploy dist --project-name=graduation-management --branch=master --commit-dirty=true
-          workingDirectory: frontend
+        run: |
+          cd frontend
+          export CLOUDFLARE_API_TOKEN="${{ secrets.test }}"
+          export CLOUDFLARE_ACCOUNT_ID="${{ secrets.CLOUDFLARE_ACCOUNT_ID }}"
+          npx wrangler pages deploy dist --project-name=graduation-management --branch=master --commit-dirty=true --no-telemetry
