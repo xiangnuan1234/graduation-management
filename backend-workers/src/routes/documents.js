@@ -154,9 +154,20 @@ export async function handleDocuments(request, env, user) {
       } 
       // 否则从 R2 获取
       else if (env.FILES) {
+        console.log(`Fetching file from R2: ${result.file_path}`);
         const object = await env.FILES.get(result.file_path);
         if (!object) {
-          return errorResponse('文件不存在', 404);
+          console.error(`File not found in R2: ${result.file_path}`);
+          return errorResponse('文件不存在于存储中', 404);
+        }
+
+        // 验证文件大小
+        const size = object.size;
+        console.log(`File size from R2: ${size} bytes`);
+        
+        if (size === 0) {
+          console.error(`File is empty in R2: ${result.file_path}`);
+          return errorResponse('文件为空，可能已损坏', 500);
         }
 
         const headers = new Headers();
@@ -164,6 +175,7 @@ export async function handleDocuments(request, env, user) {
         headers.set('etag', object.httpEtag);
         headers.set('Content-Disposition', `attachment; filename="${result.file_path.split('/').pop()}"`);
         headers.set('Access-Control-Allow-Origin', request.headers.get('Origin') || env.FRONTEND_URL || '*');
+        headers.set('Content-Length', size.toString());
 
         return new Response(object.body, {
           headers
