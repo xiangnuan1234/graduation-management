@@ -67,9 +67,10 @@
           </template>
         </el-table-column>
         <el-table-column prop="uploaded_at" label="上传时间" />
-        <el-table-column label="操作" width="100">
+        <el-table-column label="操作" width="180">
           <template #default="{ row }">
             <el-button size="small" type="primary" @click="openFile(row.id)">下载</el-button>
+            <el-button size="small" type="danger" @click="handleDelete(row.id)">删除</el-button>
           </template>
         </el-table-column>
       </el-table>
@@ -92,10 +93,11 @@
           </template>
         </el-table-column>
         <el-table-column prop="uploaded_at" label="上传时间" />
-        <el-table-column label="操作" width="150">
+        <el-table-column label="操作" width="230">
           <template #default="{ row }">
             <el-button size="small" @click="openFile(row.id)">查看</el-button>
             <el-button size="small" type="primary" @click="openStatusDialog(row)">标记</el-button>
+            <el-button size="small" type="danger" @click="handleDelete(row.id)">删除</el-button>
           </template>
         </el-table-column>
       </el-table>
@@ -142,9 +144,9 @@
 <script setup>
 import { ref, reactive, onMounted, computed } from 'vue'
 import { useUserStore } from '@/store/user'
-import { getDocumentList, uploadDocument, updateDocumentStatus, downloadDocumentFile } from '@/api/document'
+import { getDocumentList, uploadDocument, updateDocumentStatus, downloadDocumentFile, deleteDocument } from '@/api/document'
 import { getStorageUsage } from '@/api/storage'
-import { ElMessage } from 'element-plus'
+import { ElMessage, ElMessageBox } from 'element-plus'
 
 const userStore = useUserStore()
 const documents = ref([])
@@ -280,6 +282,28 @@ async function submitStatus() {
     ElMessage.success('状态更新成功')
     statusVisible.value = false
     loadData()
+  }
+}
+
+async function handleDelete(id) {
+  try {
+    await ElMessageBox.confirm('确定要删除吗？此操作不可恢复！', '警告', {
+      confirmButtonText: '确定',
+      cancelButtonText: '取消',
+      type: 'warning'
+    })
+    
+    const res = await deleteDocument(id)
+    if (res.code === 200) {
+      ElMessage.success('删除成功')
+      loadData()
+      loadStorageStats() // 重新加载存储统计
+    }
+  } catch (error) {
+    if (error !== 'cancel') {
+      console.error('Delete error:', error)
+      ElMessage.error('删除失败')
+    }
   }
 }
 </script>

@@ -215,5 +215,51 @@ export async function handleDocuments(request, env, user) {
     }
   }
 
+  // DELETE /api/documents/:id - 删除文档（学生或教师）
+  const deleteDocumentMatch = pathname.match(/^\/api\/documents\/(\d+)$/);
+  if (deleteDocumentMatch && request.method === 'DELETE') {
+    if (!user) {
+      return errorResponse('未登录', 401);
+    }
+
+    try {
+      const documentId = deleteDocumentMatch[1];
+      
+      // 查询文档信息
+      const doc = await env.DB.prepare(
+        'SELECT * FROM document WHERE id = ?'
+      ).bind(documentId).first();
+
+      if (!doc) {
+        return errorResponse('文档不存在', 404);
+      }
+
+      // 权限检查：学生只能删除自己的，教师可以删除任何
+      if (user.role === 'student' && doc.student_id !== user.id) {
+        return errorResponse('权限不足', 403);
+      }
+
+      // 如果文件存储在 R2 中，删除 R2 文件
+      if (doc.file_path && env.FILES && !doc.file_data) {
+        try {
+          await env.FILES.delete(doc.file_path);
+          console.log(`Deleted file from R2: ${doc.file_path}`);
+        } catch (err) {
+          console.error(`Failed to delete file from R2: ${doc.file_path}`, err);
+        }
+      }
+
+      // 删除数据库记录
+      await env.DB.prepare(
+        'DELETE FROM document WHERE id = ?'
+      ).bind(documentId).run();
+
+      return successResponse(null, '删除成功');
+    } catch (error) {
+      console.error('Error in DELETE /api/documents/:id:', error);
+      return errorResponse(error.message, 500);
+    }
+  }
+
   return null;
 }

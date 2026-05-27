@@ -130,6 +130,52 @@ export async function handleProposals(request, env, user) {
     }
   }
 
+  // DELETE /api/proposals/:id - 删除开题报告（学生或教师）
+  const deleteProposalMatch = pathname.match(/^\/api\/proposals\/(\d+)$/);
+  if (deleteProposalMatch && request.method === 'DELETE') {
+    if (!user) {
+      return errorResponse('未登录', 401);
+    }
+
+    try {
+      const proposalId = deleteProposalMatch[1];
+      
+      // 查询开题报告信息
+      const proposal = await env.DB.prepare(
+        'SELECT * FROM proposal WHERE id = ?'
+      ).bind(proposalId).first();
+
+      if (!proposal) {
+        return errorResponse('开题报告不存在', 404);
+      }
+
+      // 权限检查：学生只能删除自己的，教师可以删除任何
+      if (user.role === 'student' && proposal.student_id !== user.id) {
+        return errorResponse('权限不足', 403);
+      }
+
+      // 如果文件存储在 R2 中，删除 R2 文件
+      if (proposal.file_path && env.FILES && !proposal.file_data) {
+        try {
+          await env.FILES.delete(proposal.file_path);
+          console.log(`Deleted file from R2: ${proposal.file_path}`);
+        } catch (err) {
+          console.error(`Failed to delete file from R2: ${proposal.file_path}`, err);
+        }
+      }
+
+      // 删除数据库记录
+      await env.DB.prepare(
+        'DELETE FROM proposal WHERE id = ?'
+      ).bind(proposalId).run();
+
+      return successResponse(null, '删除成功');
+    } catch (error) {
+      console.error('Error in DELETE /api/proposals/:id:', error);
+      return errorResponse(error.message, 500);
+    }
+  }
+
   // GET /api/proposals/:id/file - 获取文件内容
   const fileIdMatch = pathname.match(/^\/api\/proposals\/(\d+)\/file$/);
   if (fileIdMatch && request.method === 'GET') {

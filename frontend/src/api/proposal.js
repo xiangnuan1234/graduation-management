@@ -41,3 +41,10 @@ export function downloadProposalFile(id) {
     responseType: 'blob'
   })
 }
+
+export function deleteProposal(id) {
+  return request({
+    url: `/proposals/${id}`,
+    method: 'DELETE'
+  })
+}

@@ -62,6 +62,15 @@
         <el-descriptions-item label="提交时间">{{ myProposal.created_at }}</el-descriptions-item>
         <el-descriptions-item label="评分" v-if="myProposal.score">{{ myProposal.score }}</el-descriptions-item>
         <el-descriptions-item label="评审意见" :span="2" v-if="myProposal.comment">{{ myProposal.comment }}</el-descriptions-item>
+        <el-descriptions-item label="操作" :span="2">
+          <el-button size="small" type="primary" @click="openFile(myProposal.id)">下载文件</el-button>
+          <el-button 
+            v-if="canSubmit"
+            size="small" 
+            type="danger" 
+            @click="handleDelete(myProposal.id)"
+          >删除</el-button>
+        </el-descriptions-item>
       </el-descriptions>
       <el-empty v-else description="您还未提交开题报告" />
     </el-card>
@@ -84,7 +93,7 @@
         <el-table-column prop="created_at" label="提交时间" />
         <el-table-column prop="score" label="评分" width="80" />
         <el-table-column prop="comment" label="评审意见" show-overflow-tooltip />
-        <el-table-column label="操作" width="200">
+        <el-table-column label="操作" width="280">
           <template #default="{ row }">
             <el-button
               v-if="row.file_path && row.status !== 'pass'"
@@ -98,6 +107,11 @@
               type="success"
               @click="openReviewDialog(row)"
             >评阅</el-button>
+            <el-button
+              size="small"
+              type="danger"
+              @click="handleDelete(row.id)"
+            >删除</el-button>
           </template>
         </el-table-column>
       </el-table>
@@ -149,9 +163,9 @@
 <script setup>
 import { ref, reactive, computed, onMounted } from 'vue'
 import { useUserStore } from '@/store/user'
-import { getProposalList, submitProposal, reviewProposal, downloadProposalFile } from '@/api/proposal'
+import { getProposalList, submitProposal, reviewProposal, downloadProposalFile, deleteProposal } from '@/api/proposal'
 import { getStorageUsage } from '@/api/storage'
-import { ElMessage } from 'element-plus'
+import { ElMessage, ElMessageBox } from 'element-plus'
 
 const userStore = useUserStore()
 const proposals = ref([])
@@ -300,6 +314,28 @@ async function submitReview() {
     ElMessage.success('评阅成功')
     reviewVisible.value = false
     loadData()
+  }
+}
+
+async function handleDelete(id) {
+  try {
+    await ElMessageBox.confirm('确定要删除吗？此操作不可恢复！', '警告', {
+      confirmButtonText: '确定',
+      cancelButtonText: '取消',
+      type: 'warning'
+    })
+    
+    const res = await deleteProposal(id)
+    if (res.code === 200) {
+      ElMessage.success('删除成功')
+      loadData()
+      loadStorageStats() // 重新加载存储统计
+    }
+  } catch (error) {
+    if (error !== 'cancel') {
+      console.error('Delete error:', error)
+      ElMessage.error('删除失败')
+    }
   }
 }
 </script>

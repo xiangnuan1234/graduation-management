@@ -32,3 +32,10 @@ export function downloadDocumentFile(id) {
     responseType: 'blob'
   })
 }
+
+export function deleteDocument(id) {
+  return request({
+    url: `/documents/${id}`,
+    method: 'DELETE'
+  })
+}
