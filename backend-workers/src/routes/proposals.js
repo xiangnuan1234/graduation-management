@@ -139,29 +139,50 @@ export async function handleProposals(request, env, user) {
         'SELECT file_path, file_data FROM proposal WHERE id = ?'
       ).bind(proposalId).first();
 
-      if (!result || !result.file_data) {
+      if (!result || !result.file_path) {
         return errorResponse('文件不存在', 404);
       }
 
-      // 解码 Base64
-      const binaryString = atob(result.file_data);
-      const bytes = new Uint8Array(binaryString.length);
-      for (let i = 0; i < binaryString.length; i++) {
-        bytes[i] = binaryString.charCodeAt(i);
-      }
-
-      // 推断 MIME 类型
-      let contentType = 'application/octet-stream';
-      if (result.file_path.endsWith('.pdf')) contentType = 'application/pdf';
-      else if (result.file_path.endsWith('.docx')) contentType = 'application/vnd.openxmlformats-officedocument.wordprocessingml.document';
-      else if (result.file_path.endsWith('.doc')) contentType = 'application/msword';
-
-      return new Response(bytes, {
-        headers: {
-          'Content-Type': contentType,
-          'Content-Disposition': `attachment; filename="${result.file_path}"`
+      // 如果有 file_data，说明是 Base64 存储在数据库中
+      if (result.file_data) {
+        // 解码 Base64
+        const binaryString = atob(result.file_data);
+        const bytes = new Uint8Array(binaryString.length);
+        for (let i = 0; i < binaryString.length; i++) {
+          bytes[i] = binaryString.charCodeAt(i);
         }
-      });
+
+        // 推断 MIME 类型
+        let contentType = 'application/octet-stream';
+        if (result.file_path.endsWith('.pdf')) contentType = 'application/pdf';
+        else if (result.file_path.endsWith('.docx')) contentType = 'application/vnd.openxmlformats-officedocument.wordprocessingml.document';
+        else if (result.file_path.endsWith('.doc')) contentType = 'application/msword';
+
+        return new Response(bytes, {
+          headers: {
+            'Content-Type': contentType,
+            'Content-Disposition': `attachment; filename="${result.file_path.split('/').pop()}"`
+          }
+        });
+      } 
+      // 否则从 R2 获取
+      else if (env.FILES) {
+        const object = await env.FILES.get(result.file_path);
+        if (!object) {
+          return errorResponse('文件不存在', 404);
+        }
+
+        const headers = new Headers();
+        object.writeHttpMetadata(headers);
+        headers.set('etag', object.httpEtag);
+        headers.set('Content-Disposition', `attachment; filename="${result.file_path.split('/').pop()}"`);
+
+        return new Response(object.body, {
+          headers
+        });
+      } else {
+        return errorResponse('文件存储未配置', 503);
+      }
     } catch (error) {
       console.error('Error in GET /api/proposals/:id/file:', error);
       return errorResponse(error.message, 500);

@@ -102,9 +102,14 @@ const collapsed = ref(false)
 const unreadCount = ref(0)
 
 async function loadUnreadCount() {
-  const res = await getNotificationList()
-  if (res.code === 200) {
-    unreadCount.value = res.data.unreadCount
+  try {
+    const res = await getNotificationList()
+    if (res.code === 200) {
+      unreadCount.value = res.data.unreadCount
+    }
+  } catch (error) {
+    // 静默失败，避免影响用户体验
+    console.error('Failed to load unread count:', error)
   }
 }
 

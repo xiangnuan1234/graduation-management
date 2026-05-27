@@ -40,6 +40,7 @@ CREATE TABLE IF NOT EXISTS proposal (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   student_id INTEGER NOT NULL,
   file_path TEXT,
+  file_data TEXT,
   status TEXT DEFAULT 'pending' CHECK(status IN ('pending', 'submitted', 'reviewing', 'pass', 'fail')),
   score INTEGER,
   comment TEXT,
@@ -68,6 +69,7 @@ CREATE TABLE IF NOT EXISTS document (
   version INTEGER DEFAULT 1,
   file_path TEXT,
   file_name TEXT,
+  file_data TEXT,
   status TEXT DEFAULT 'draft' CHECK(status IN ('draft', 'submitted', 'reviewed')),
   uploaded_at DATETIME DEFAULT CURRENT_TIMESTAMP,
   FOREIGN KEY (student_id) REFERENCES user(id)

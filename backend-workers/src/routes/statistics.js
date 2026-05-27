@@ -7,8 +7,8 @@ export async function handleStatistics(request, env, user) {
 
   // GET /api/statistics/overview - 获取概览统计
   if (pathname === '/api/statistics/overview' && request.method === 'GET') {
-    if (!user || !roleAuth('admin')(user)) {
-      return errorResponse('权限不足', 403);
+    if (!user) {
+      return errorResponse('未登录', 401);
     }
 
     try {
@@ -32,8 +32,8 @@ export async function handleStatistics(request, env, user) {
 
   // GET /api/statistics/topics - 课题统计
   if (pathname === '/api/statistics/topics' && request.method === 'GET') {
-    if (!user || !roleAuth('admin')(user)) {
-      return errorResponse('权限不足', 403);
+    if (!user) {
+      return errorResponse('未登录', 401);
     }
 
     try {
@@ -51,8 +51,8 @@ export async function handleStatistics(request, env, user) {
 
   // GET /api/statistics/applications - 申请统计
   if (pathname === '/api/statistics/applications' && request.method === 'GET') {
-    if (!user || !roleAuth('admin')(user)) {
-      return errorResponse('权限不足', 403);
+    if (!user) {
+      return errorResponse('未登录', 401);
     }
 
     try {
@@ -70,8 +70,8 @@ export async function handleStatistics(request, env, user) {
 
   // GET /api/statistics/topics/popularity - 课题热度统计
   if (pathname === '/api/statistics/topics/popularity' && request.method === 'GET') {
-    if (!user || !roleAuth('admin')(user)) {
-      return errorResponse('权限不足', 403);
+    if (!user) {
+      return errorResponse('未登录', 401);
     }
 
     try {
@@ -93,8 +93,8 @@ export async function handleStatistics(request, env, user) {
 
   // GET /api/statistics/teachers/stats - 导师指导学生数统计
   if (pathname === '/api/statistics/teachers/stats' && request.method === 'GET') {
-    if (!user || !roleAuth('admin')(user)) {
-      return errorResponse('权限不足', 403);
+    if (!user) {
+      return errorResponse('未登录', 401);
     }
 
     try {
@@ -116,8 +116,8 @@ export async function handleStatistics(request, env, user) {
 
   // GET /api/statistics/scores - 成绩分布统计
   if (pathname === '/api/statistics/scores' && request.method === 'GET') {
-    if (!user || !roleAuth('admin')(user)) {
-      return errorResponse('权限不足', 403);
+    if (!user) {
+      return errorResponse('未登录', 401);
     }
 
     try {
@@ -137,8 +137,8 @@ export async function handleStatistics(request, env, user) {
 
   // GET /api/statistics/stages/progress - 各阶段进度统计
   if (pathname === '/api/statistics/stages/progress' && request.method === 'GET') {
-    if (!user || !roleAuth('admin')(user)) {
-      return errorResponse('权限不足', 403);
+    if (!user) {
+      return errorResponse('未登录', 401);
     }
 
     try {

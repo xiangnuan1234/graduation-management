@@ -103,7 +103,18 @@ export default {
       const headers = new Headers();
       object.writeHttpMetadata(headers);
       headers.set('etag', object.httpEtag);
-      headers.set('Access-Control-Allow-Origin', origin || env.FRONTEND_URL || '*');
+      
+      // 设置 CORS
+      const origin = request.headers.get('Origin');
+      const allowedOrigins = [
+        'https://www.xiangnuan.cc.cd',
+        'https://xiangnuan.cc.cd',
+        'https://graduation-management.pages.dev',
+        env.FRONTEND_URL
+      ].filter(Boolean);
+      
+      const allowOrigin = allowedOrigins.includes(origin) ? origin : allowedOrigins[0];
+      headers.set('Access-Control-Allow-Origin', allowOrigin || '*');
 
       return new Response(object.body, {
         headers,
