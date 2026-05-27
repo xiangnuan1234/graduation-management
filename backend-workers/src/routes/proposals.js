@@ -161,7 +161,8 @@ export async function handleProposals(request, env, user) {
         return new Response(bytes, {
           headers: {
             'Content-Type': contentType,
-            'Content-Disposition': `attachment; filename="${result.file_path.split('/').pop()}"`
+            'Content-Disposition': `attachment; filename="${result.file_path.split('/').pop()}"`,
+            'Access-Control-Allow-Origin': request.headers.get('Origin') || env.FRONTEND_URL || '*'
           }
         });
       } 
@@ -176,6 +177,7 @@ export async function handleProposals(request, env, user) {
         object.writeHttpMetadata(headers);
         headers.set('etag', object.httpEtag);
         headers.set('Content-Disposition', `attachment; filename="${result.file_path.split('/').pop()}"`);
+        headers.set('Access-Control-Allow-Origin', request.headers.get('Origin') || env.FRONTEND_URL || '*');
 
         return new Response(object.body, {
           headers
