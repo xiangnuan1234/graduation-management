@@ -69,7 +69,7 @@
         <el-table-column prop="uploaded_at" label="上传时间" />
         <el-table-column label="操作" width="100">
           <template #default="{ row }">
-            <el-button size="small" type="primary" @click="openFile(row.file_path)">下载</el-button>
+            <el-button size="small" type="primary" @click="openFile(row.id)">下载</el-button>
           </template>
         </el-table-column>
       </el-table>
@@ -94,7 +94,7 @@
         <el-table-column prop="uploaded_at" label="上传时间" />
         <el-table-column label="操作" width="150">
           <template #default="{ row }">
-            <el-button size="small" @click="openFile(row.file_path)">查看</el-button>
+            <el-button size="small" @click="openFile(row.id)">查看</el-button>
             <el-button size="small" type="primary" @click="openStatusDialog(row)">标记</el-button>
           </template>
         </el-table-column>
@@ -142,7 +142,7 @@
 <script setup>
 import { ref, reactive, onMounted, computed } from 'vue'
 import { useUserStore } from '@/store/user'
-import { getDocumentList, uploadDocument, updateDocumentStatus } from '@/api/document'
+import { getDocumentList, uploadDocument, updateDocumentStatus, downloadDocumentFile } from '@/api/document'
 import { getStorageUsage } from '@/api/storage'
 import { ElMessage } from 'element-plus'
 
@@ -240,8 +240,32 @@ async function uploadFile() {
   }
 }
 
-function openFile(path) {
-  window.open('/' + path)
+async function openFile(id) {
+  try {
+    const blob = await downloadDocumentFile(id)
+    
+    // 检查 blob 是否有效
+    if (!blob || blob.size === 0) {
+      ElMessage.error('文件为空或已损坏')
+      return
+    }
+    
+    const url = window.URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    
+    // 从列表中获取文件名
+    const doc = documents.value.find(d => d.id === id)
+    a.download = doc?.file_name || `document_${id}.pdf`
+    
+    document.body.appendChild(a)
+    a.click()
+    window.URL.revokeObjectURL(url)
+    document.body.removeChild(a)
+  } catch (error) {
+    console.error('Download error:', error)
+    ElMessage.error('文件下载失败')
+  }
 }
 
 function openStatusDialog(row) {
