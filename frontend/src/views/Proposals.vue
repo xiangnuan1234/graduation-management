@@ -127,8 +127,8 @@
       <el-form :model="reviewForm" ref="reviewFormRef" label-width="80px">
         <el-form-item label="评审结果">
           <el-radio-group v-model="reviewForm.status">
-            <el-radio label="pass">通过</el-radio>
-            <el-radio label="fail">不通过</el-radio>
+            <el-radio value="pass">通过</el-radio>
+            <el-radio value="fail">不通过</el-radio>
           </el-radio-group>
         </el-form-item>
         <el-form-item label="评分">

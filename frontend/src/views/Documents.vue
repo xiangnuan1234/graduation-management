@@ -125,9 +125,9 @@
       <el-form label-width="80px">
         <el-form-item label="状态">
           <el-radio-group v-model="statusForm.status">
-            <el-radio label="draft">草稿</el-radio>
-            <el-radio label="submitted">已提交</el-radio>
-            <el-radio label="reviewed">已批阅</el-radio>
+            <el-radio value="draft">草稿</el-radio>
+            <el-radio value="submitted">已提交</el-radio>
+            <el-radio value="reviewed">已批阅</el-radio>
           </el-radio-group>
         </el-form-item>
       </el-form>
