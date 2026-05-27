@@ -189,5 +189,31 @@ export async function handleDocuments(request, env, user) {
     }
   }
 
+  // PUT /api/documents/:id/status - 更新文档状态（教师）
+  const statusIdMatch = pathname.match(/^\/api\/documents\/(\d+)\/status$/);
+  if (statusIdMatch && request.method === 'PUT') {
+    if (!user || !roleAuth('teacher')(user)) {
+      return errorResponse('权限不足', 403);
+    }
+
+    try {
+      const documentId = statusIdMatch[1];
+      const { status } = await request.json();
+      
+      if (!['draft', 'submitted', 'reviewed'].includes(status)) {
+        return errorResponse('无效的状态值', 400);
+      }
+
+      await env.DB.prepare(
+        'UPDATE document SET status = ? WHERE id = ?'
+      ).bind(status, documentId).run();
+
+      return successResponse(null, '状态更新成功');
+    } catch (error) {
+      console.error('Error in PUT /api/documents/:id/status:', error);
+      return errorResponse(error.message, 500);
+    }
+  }
+
   return null;
 }
